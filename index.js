@@ -13,8 +13,8 @@ const puppeteer = require('puppeteer');
     await page.waitForSelector('[data-component-type=s-search-result]');
 
     /* Here push the info of the article on empty array*/
-    const enlaces = await page.evaluate(()=>{
-        const elements = document.querySelectorAll(['[data-component-type=s-search-result] h2 a']);
+    const href = await page.evaluate(()=>{
+        const elements = document.querySelectorAll('[data-component-type=s-search-result] h2 a');
 
         const links = [];
         for (let element of elements){
@@ -23,26 +23,33 @@ const puppeteer = require('puppeteer');
 
         return links;
     });
-    console.log (enlaces.length);
+
         /* Created an array to put the information inside  */
         const iPhoneInfo = [];
 
         /* Here wait for charge selector (title) and move around links */
-        for (let enlance of enlaces){
-            await page.goto(enlance);
+        for (let hrefs of href){
+            await page.goto(hrefs);
             await page.waitForSelector('#productTitle');
              /* Extract the information of article (title and price) and return */
             const phone = await page.evaluate(()=>{
-                const tmp = {};
-                    tmp.title = document.getElementById('#productTitle').innerText;
-                    tmp.price = document.getElementById('#price_inside_buybox').innerText;
-                return tmp;
+                const tpm = {};
+                try{
+                        tpm.title = document.querySelector("#productTitle").innerText.includes("iPhone 11") && !document.querySelector("#productTitle").innerText.includes("Pro") ? document.querySelector("#productTitle").innerText : null;
+                        tpm.price = parseFloat(document.querySelector("#price_inside_buybox").innerText) * 1000;
+                    return tpm;
+                }catch(error){
+                    console.log (error);
+                }
             });
-            /* push information */
-            iPhoneInfo.push(phone);
-        }
-    
-        console.log (iPhoneInfo);
+
+        phone.link = href;
+        /* push information */
+            if (phone.title && phone.price > 500) iPhoneInfo.push(phone);
+            }
+
+        console.log (iPhoneInfo, iPhoneInfo.length);
+
     /* close browser */
     await browser.close();
 })();
